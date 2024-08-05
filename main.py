@@ -268,12 +268,20 @@ problem += int(skillName[199][1]) <= y[210]     # 陽動攻撃
 
 status = problem.solve()
 
+slot = [0] * 4
+mtSlot = [0] * 4
+decoSlot = [0] * 4
+mtDecoSlot = [0] * 4
+selectedEquipIndex = [0] * 6
+selectedDecoIndex = []
+
 print(pulp.LpStatus[status])
 if pulp.LpStatus[status] == "Optimal":
     for i in range(6):
         for j in range(len(numEquip[i])):
             if numEquip[i][j].value() != 0:
                 print(equip[i][j][0] + " * " + str(int(numEquip[i][j].value())))
+                selectedEquipIndex[i] = j
     print(int(y[10].value()))
     for i in range(11,len(y)):
         if y[i].value() != 0:
@@ -282,11 +290,31 @@ if pulp.LpStatus[status] == "Optimal":
     for i in range(len(numDeco)):
         if numDeco[i].value() != 0:
             print(deco[i][0] + " * " + str(int(numDeco[i].value())))
+            selectedDecoIndex.append(i)
 
-    slot = [0] * 4
+    for i in range(5):
+        for j in range(4):
+            mtSlot[j] += int(equip[i][selectedEquipIndex[i]][j+7])
+    slot[3] = mtSlot[3]
+    slot[2] = mtSlot[2] - mtSlot[3]
+    slot[1] = mtSlot[1] - mtSlot[2]
+    slot[0] = mtSlot[0] - mtSlot[1]
 
-    print(y[6].value())
-    print(y[7].value())
-    print(y[8].value())
-    print(y[9].value())
+    for i in range(len(selectedDecoIndex)):
+        for j in range(4):
+            mtDecoSlot[j] += int(deco[selectedDecoIndex[i]][j+7]) * int(numDeco[i].value())
+    decoSlot[3] = mtDecoSlot[3]
+    decoSlot[2] = mtDecoSlot[2] - mtDecoSlot[3]
+    decoSlot[1] = mtDecoSlot[1] - mtDecoSlot[2]
+    decoSlot[0] = mtDecoSlot[0] - mtDecoSlot[1]
+
+    print(slot[0])
+    print(slot[1])
+    print(slot[2])
+    print(slot[3])
+    print(decoSlot[0])
+    print(decoSlot[1])
+    print(decoSlot[2])
+    print(decoSlot[3])
+
 
