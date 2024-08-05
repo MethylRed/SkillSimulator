@@ -302,19 +302,27 @@ if pulp.LpStatus[status] == "Optimal":
 
     for i in range(len(selectedDecoIndex)):
         for j in range(4):
-            mtDecoSlot[j] += int(deco[selectedDecoIndex[i]][j+7]) * int(numDeco[i].value())
+            mtDecoSlot[j] += abs(int(deco[selectedDecoIndex[i]][j+7])) * int(numDeco[selectedDecoIndex[i]].value())
     decoSlot[3] = mtDecoSlot[3]
     decoSlot[2] = mtDecoSlot[2] - mtDecoSlot[3]
     decoSlot[1] = mtDecoSlot[1] - mtDecoSlot[2]
     decoSlot[0] = mtDecoSlot[0] - mtDecoSlot[1]
 
-    print(slot[0])
-    print(slot[1])
-    print(slot[2])
-    print(slot[3])
-    print(decoSlot[0])
-    print(decoSlot[1])
-    print(decoSlot[2])
-    print(decoSlot[3])
+    if (slot[0] - decoSlot[0]) > 0:
+        print("Lv1スロット * " + str(slot[0] - decoSlot[0]))
+    else:
+        slot[1] -= abs(slot[0] - decoSlot[0])
+    if (slot[1] - decoSlot[1]) > 0:
+        print("Lv2スロット * " + str(slot[1] - decoSlot[1]))
+    else:
+        slot[2] -= abs(slot[1] - decoSlot[1])
+    if (slot[2] - decoSlot[0]) > 0:
+        print("Lv3スロット * " + str(slot[2] - decoSlot[2]))
+    else:
+        slot[3] -= abs(slot[2] - decoSlot[2])
+    if (slot[3] - decoSlot[3]) > 0:
+        print("Lv4スロット * " + str(slot[3] - decoSlot[3]))
+    
+
 
 
