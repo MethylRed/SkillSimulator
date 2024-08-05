@@ -16,12 +16,12 @@ index = ["name", "head", "body", "arm", "wst", "leg", "charm",
 for s in r:
     index.append(s[0])
 
-with open('./data/'+fname+'.csv', mode='w', encoding='utf-8') as file:
+with open('./'+fname+'.csv', mode='w', encoding='utf-8') as file:
     for s in index:
         file.write(str(s) + ",")
     file.write("\n")
 
-with open('./ext/'+fname+'.csv', mode='r', encoding='utf-8') as file:
+with open('../ext/'+fname+'.csv', mode='r', encoding='utf-8') as file:
     reader = list(csv.reader(file))
 
 for i in range(1,len(reader)):
@@ -61,17 +61,7 @@ for i in range(1,len(reader)):
 
     a += skill
 
-    with open('./data/'+fname+'.csv', mode='a', encoding='utf-8') as file:
+    with open('./'+fname+'.csv', mode='a', encoding='utf-8') as file:
         for s in a:
             file.write(str(s) + ",")
         file.write("\n")
-
-# for i in range(len(reader)):
-#     if reader[i][0] not in a:
-#         a.append(reader[i][0])
-
-# # print(a)
-
-# with open('./data/skill.csv', mode='w', encoding='utf-8') as file:
-#     for b in a:
-#         file.write(b+"\n")
