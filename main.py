@@ -2,6 +2,7 @@
 
 import pulp
 import csv
+# import sys
 
 # 線形計画問題の定義
 # 最大化問題を解く
@@ -64,6 +65,8 @@ for i in range(len(equipCategory)):
             elif int(excludeEquip[j+k][i+1]) == 1:
                 numEquip[i][j] = pulp.LpVariable('numEquip'+str(i)+','+str(j), 
                                                  lowBound=0, upBound=0, cat=pulp.LpInteger)
+            else:
+                exit("excludeEquip.csvに0または1以外の文字が含まれています。")
         # 護石
         else:
             numEquip[i][j] = pulp.LpVariable('numEquip'+str(i)+','+str(j), cat=pulp.LpBinary)
@@ -99,21 +102,26 @@ for i in range(4):
     problem += -int(weapon[0][i+6]) <= y[i+6]
 
 # スキル条件
+# 武器スキル分を引く
 for i in range(len(skillCondition)):
     problem += (int(skillCondition[i][1]) - int(weapon[0][i+16])) <= y[i+16], 'skill'+str(i)
 
 
-count = 0
-string = input("検索件数を入力してください。")
-while (not string.isdecimal()):
-    string = input("検索件数を入力してください。")
-numSearch = int(string)
+# 最適化問題を解く
+# 検索回数
+# 非負整数以外は弾く
 while (True):
-    # 解く
+    string = input("検索回数を入力してください。(最大50) ")
+    if string.isdecimal(): break
+    print("非負整数を入力してください。")
+numSearch = int(string)
+if numSearch > 50: numSearch = 50
+count = 0
+while (True):
     status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
 
-    # 解の表示
-    if (pulp.LpStatus[status] == "Optimal") & (count < numSearch):
+    # 解があるand検索回数が指定値以下なら解を表示
+    if (pulp.LpStatus[status] == "Optimal") & (count < min(numSearch,50)):
         # 防具・護石の表示
         for i in range(6):
             for j in range(len(numEquip[i])):
@@ -151,7 +159,7 @@ while (True):
         resExcluded = 0
         for i in range(6):
             resExcluded += numEquip[i][resEquipIndex[i]]
-        problem += resExcluded <= 5
+        problem += resExcluded <= 5, 'multiSearch'+str(count)
 
         count += 1
     else:
@@ -161,18 +169,24 @@ while (True):
 
 
 # 追加スキル検索
-print("\n追加スキル検索を実行しますか? y/n")
-input = input()
-if input == 'y':
-    for i in range(len(skillCondition)):
+if count > 0:
+    print("\n追加スキル検索を実行しますか? y/n")
+    input = input()
+    if input == 'y':
+        # 複数検索条件をすべて削除
+        for i in range(count):
+            del problem.constraints['multiSearch'+str(count-1)]
         # 全スキルから一つだけLvを+1して問題を解く
-        del problem.constraints['skill'+str(i)]
-        problem += (int(skillCondition[i][1])+1) <= y[i+16], 'skill'+str(i)
-        if i != 0:
-            del problem.constraints['skill'+str(i-1)]
-            problem += (int(skillCondition[i-1][1])) <= y[i-1+16], 'skill'+str(i-1)
+        for i in range(len(skillCondition)):
+            del problem.constraints['skill'+str(i)]
+            problem += (int(skillCondition[i][1])+1) <= y[i+16], 'skill'+str(i)
+            if i != 0:
+                del problem.constraints['skill'+str(i-1)]
+                problem += (int(skillCondition[i-1][1])) <= y[i-1+16], 'skill'+str(i-1)
 
-        status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
+            # +1して上限を超える場合はスキップ
+            if int(skillCondition[i][1])+1 <= int(skillCondition[i][3]):
+                status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
 
-        if pulp.LpStatus[status] == "Optimal":
-            print("追加スキル検索:" + skillCondition[i][0] + "+1")
+                if pulp.LpStatus[status] == "Optimal":
+                    print("追加スキル検索:" + skillCondition[i][0] + "+1")
