@@ -178,15 +178,20 @@ if count > 0:
             del problem.constraints['multiSearch'+str(count-1)]
         # 全スキルから一つだけLvを+1して問題を解く
         for i in range(len(skillCondition)):
-            del problem.constraints['skill'+str(i)]
-            problem += (int(skillCondition[i][1])+1) <= y[i+16], 'skill'+str(i)
-            if i != 0:
-                del problem.constraints['skill'+str(i-1)]
-                problem += (int(skillCondition[i-1][1])) <= y[i-1+16], 'skill'+str(i-1)
+            j = 1
+            while (True):
+                del problem.constraints['skill'+str(i)]
+                problem += (int(skillCondition[i][1])+j) <= y[i+16], 'skill'+str(i)
+                if (i != 0) & (j == 1):
+                    del problem.constraints['skill'+str(i-1)]
+                    problem += (int(skillCondition[i-1][1])) <= y[i-1+16], 'skill'+str(i-1)
 
-            # +1して上限を超える場合はスキップ
-            if int(skillCondition[i][1])+1 <= int(skillCondition[i][3]):
-                status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
+                # +jして上限を超える場合はスキップ
+                if int(skillCondition[i][1])+j <= int(skillCondition[i][3]):
+                    status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
 
-                if pulp.LpStatus[status] == "Optimal":
-                    print("追加スキル検索:" + skillCondition[i][0] + "+1")
+                    if pulp.LpStatus[status] == "Optimal":
+                        print("追加スキル検索:" + skillCondition[i][0] + "Lv" + str(int(skillCondition[i][1])+j))
+                else:
+                    break
+                j += 1
