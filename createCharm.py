@@ -3,7 +3,7 @@ import csv
 
 fname = "charm"
 
-with open('./skill.csv', mode='r', encoding='utf-8') as file:
+with open('./skillCondition.csv', mode='r', encoding='utf-8') as file:
     r = list(csv.reader(file))
 
 index = ["name", "head", "body", "arm", "wst", "leg", "charm",
@@ -11,17 +11,23 @@ index = ["name", "head", "body", "arm", "wst", "leg", "charm",
          "NumMoreThanLv2Slot",
          "NumMoreThanLv3Slot",
          "NumMoreThanLv4Slot",
-         "Defense"]
+         "Defense",
+         "Fire Res",
+         "Water Res",
+         "Thunder Res",
+         "Ice Res",
+         "Dragon Res",
+         ]
 
 for s in r:
     index.append(s[0])
 
-with open('./'+fname+'.csv', mode='w', encoding='utf-8') as file:
+with open('./data2/'+fname+'.csv', mode='w', encoding='utf-8') as file:
     for s in index:
         file.write(str(s) + ",")
     file.write("\n")
 
-with open('../ext/'+fname+'.csv', mode='r', encoding='utf-8') as file:
+with open('./ext/'+fname+'.csv', mode='r', encoding='utf-8') as file:
     reader = list(csv.reader(file))
 
 for i in range(1,len(reader)):
@@ -48,7 +54,8 @@ for i in range(1,len(reader)):
 
 
     a = [reader[i][0],0,0,0,0,0,1,0,0,0,0,
-         0
+         0,
+         0,0,0,0,0,
         ]
 
     skill = [0] * len(r)
@@ -60,7 +67,7 @@ for i in range(1,len(reader)):
 
     a += skill
 
-    with open('./'+fname+'.csv', mode='a', encoding='utf-8') as file:
+    with open('./data2/'+fname+'.csv', mode='a', encoding='utf-8') as file:
         for s in a:
             file.write(str(s) + ",")
         file.write("\n")

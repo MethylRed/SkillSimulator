@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import csv
 
-fname = "head"
+fname = "leg"
 
-with open('./skill.csv', mode='r', encoding='utf-8') as file:
+with open('./skillCondition.csv', mode='r', encoding='utf-8') as file:
     r = list(csv.reader(file))
 
 index = ["name", "head", "body", "arm", "wst", "leg", "charm",
@@ -11,17 +11,23 @@ index = ["name", "head", "body", "arm", "wst", "leg", "charm",
          "NumMoreThanLv2Slot",
          "NumMoreThanLv3Slot",
          "NumMoreThanLv4Slot",
-         "Defense"]
+         "Defense",
+         "Fire Res",
+         "Water Res",
+         "Thunder Res",
+         "Ice Res",
+         "Dragon Res",
+         ]
 
 for s in r:
     index.append(s[0])
 
-with open('./'+fname+'.csv', mode='w', encoding='utf-8') as file:
+with open('./data2/'+fname+'.csv', mode='w', encoding='utf-8') as file:
     for s in index:
         file.write(str(s) + ",")
     file.write("\n")
 
-with open('../ext/'+fname+'.csv', mode='r', encoding='utf-8') as file:
+with open('./ext/'+fname+'.csv', mode='r', encoding='utf-8') as file:
     reader = list(csv.reader(file))
 
 for i in range(1,len(reader)):
@@ -46,7 +52,6 @@ for i in range(1,len(reader)):
             s3 += 1
             s4 += 1
 
-
     a = [reader[i][0],
         1 if 'head' in file.name else 0,
         1 if 'body' in file.name else 0,
@@ -55,7 +60,12 @@ for i in range(1,len(reader)):
         1 if 'leg' in file.name else 0,
         1 if 'charm' in file.name else 0,
         s1,s2,s3,s4,
-        int(reader[i][8])
+        int(reader[i][8]),
+        int(reader[i][9]),
+        int(reader[i][10]),
+        int(reader[i][11]),
+        int(reader[i][12]),
+        int(reader[i][13]),
         ]
 
 
@@ -75,7 +85,7 @@ for i in range(1,len(reader)):
 
     a += skill
 
-    with open('./'+fname+'.csv', mode='a', encoding='utf-8') as file:
+    with open('./data2/'+fname+'.csv', mode='a', encoding='utf-8') as file:
         for s in a:
             file.write(str(s) + ",")
         file.write("\n")
