@@ -22,7 +22,7 @@ index = ["name", "head", "body", "arm", "wst", "leg", "charm",
 for s in r:
     index.append(s[0])
 
-with open('./data2/'+fname+'.csv', mode='w', encoding='utf-8') as file:
+with open('./data/'+fname+'.csv', mode='w', encoding='utf-8') as file:
     for s in index:
         file.write(str(s) + ",")
     file.write("\n")
@@ -85,7 +85,7 @@ for i in range(1,len(reader)):
 
     a += skill
 
-    with open('./data2/'+fname+'.csv', mode='a', encoding='utf-8') as file:
+    with open('./data/'+fname+'.csv', mode='a', encoding='utf-8') as file:
         for s in a:
             file.write(str(s) + ",")
         file.write("\n")

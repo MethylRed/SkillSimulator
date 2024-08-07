@@ -2,7 +2,7 @@
 
 import pulp
 import csv
-# import sys
+import utl.utl
 
 # 線形計画問題の定義
 # 最大化問題を解く
@@ -20,7 +20,7 @@ resDecoIndex = []
 
 
 # スキル条件を設定したCSVファイルを読み込む
-with open('./skillCondition.csv', mode='r', encoding='utf-8') as file:
+with open('./conditions/skillCondition.csv', mode='r', encoding='utf-8') as file:
     skillCondition = list(csv.reader(file))
 del skillCondition[0]
 
@@ -33,13 +33,19 @@ for i in range(len(equipCategory)):
 with open('./data/deco.csv', mode='r', encoding='utf-8') as file:
     deco = list(csv.reader(file))
 del deco[0]
-with open('./haveDeco.csv', mode='r', encoding='utf-8') as file:
+
+with open('./conditions/haveDeco.csv', mode='r', encoding='utf-8') as file:
     haveDeco = list(csv.reader(file))
 del haveDeco[0]
-with open('./excludeEquip.csv', mode='r', encoding='utf-8') as file:
-    excludeEquip = list(csv.reader(file))
-del excludeEquip[0]
-with open('./weapon.csv', mode='r', encoding='utf-8') as file:
+
+with open('./conditions/excludeArmor.csv', mode='r', encoding='utf-8') as file:
+    excludeArmor = list(csv.reader(file))
+del excludeArmor[0]
+
+with open('./conditions/excludeCharm.csv', mode='r', encoding='utf-8') as file:
+    excludeCharm = list(csv.reader(file))
+
+with open('./conditions/weapon.csv', mode='r', encoding='utf-8') as file:
     weapon = list(csv.reader(file))
 del weapon[0]
 
@@ -56,20 +62,28 @@ for i in range(len(equipCategory)):
         # 防具
         if i < 5:
             # 存在しない装備はスキップ
-            while int(excludeEquip[j+k][i+1]) == -1:
+            while int(excludeArmor[j+k][i+1]) == -1:
                 k += 1
             # 除外しない場合
-            if int(excludeEquip[j+k][i+1]) == 0:
+            if int(excludeArmor[j+k][i+1]) == 0:
                 numEquip[i][j] = pulp.LpVariable('numEquip'+str(i)+','+str(j), cat=pulp.LpBinary)
             # 除外する場合
-            elif int(excludeEquip[j+k][i+1]) == 1:
+            elif int(excludeArmor[j+k][i+1]) == 1:
                 numEquip[i][j] = pulp.LpVariable('numEquip'+str(i)+','+str(j), 
                                                  lowBound=0, upBound=0, cat=pulp.LpInteger)
             else:
-                exit("excludeEquip.csvに0または1以外の文字が含まれています。")
+                exit("excludeArmor.csvに0または1以外の文字が含まれています。")
         # 護石
         else:
-            numEquip[i][j] = pulp.LpVariable('numEquip'+str(i)+','+str(j), cat=pulp.LpBinary)
+            # 除外しない場合
+            if int(excludeCharm[j+k][1]) == 0:
+                numEquip[i][j] = pulp.LpVariable('numEquip'+str(i)+','+str(j), cat=pulp.LpBinary)
+            # 除外する場合
+            elif int(excludeCharm[j+k][1]) == 1:
+                numEquip[i][j] = pulp.LpVariable('numEquip'+str(i)+','+str(j), 
+                                                 lowBound=0, upBound=0, cat=pulp.LpInteger)
+            else:
+                exit("excludeCharm.csvに0または1以外の文字が含まれています。")
 
 # 装飾品
 for i in range(len(deco)):
@@ -80,14 +94,19 @@ for i in range(len(deco)):
 y = [0] * (len(equip[0][0])-1)
 
 # 結果ベクトルの計算
+# 防具・護石
 for i in range(len(y)):
     for j in range(len(equipCategory)):
         for k in range(len(equip[j])):
             y[i] += int(equip[j][k][i+1]) * numEquip[j][k]
+# 装飾品
 for i in range(len(y)):
     for j in range(len(deco)):
         # print(deco[j][i+1])
         y[i] += int(deco[j][i+1]) * numDeco[j]
+# 武器
+for i in  range(len(y)):
+    y[i] += int(weapon[0][i+1])
 
 
 # 防御を最適化
@@ -99,12 +118,15 @@ for i in range(6):
     problem += 0 <= y[i] <= 1
 # 装飾品スロットは不足してはいけない
 for i in range(4):
-    problem += -int(weapon[0][i+6]) <= y[i+6]
+    problem += 0 <= y[i+6]
 
 # スキル条件
-# 武器スキル分を引く
+# シリーズスキルの極意系発動による上限解放がされていない場合はやり直し
 for i in range(len(skillCondition)):
-    problem += (int(skillCondition[i][1]) - int(weapon[0][i+16])) <= y[i+16], 'skill'+str(i)
+    if (int(skillCondition[i][4]) == 0) & (int(skillCondition[i][1]) > int(skillCondition[i][2])):
+        if not utl.utl.judgeSecret(i,skillCondition):
+            exit(str(skillCondition[i][0]) + "・極意が指定されていません。対応するシリーズスキルを指定してください。")
+    problem += int(skillCondition[i][1]) <= y[i+16], 'skill'+str(i)
 
 
 # 最適化問題を解く
@@ -136,7 +158,7 @@ while (True):
         # 発動スキルの表示
         for i in range(16,len(y)):
             if y[i].value() != 0:
-                print(str(skillCondition[i-16][0]) + 'Lv' + str(int(y[i].value())+int(weapon[0][i])))
+                print(str(skillCondition[i-16][0]) + 'Lv' + str(int(y[i].value())))
 
         # 必要な装飾品の表示
         for i in range(len(numDeco)):
@@ -145,10 +167,10 @@ while (True):
                 resDecoIndex.append(i)
 
         # 余りスロットの表示
-        y6 = int(y[6].value()+int(weapon[0][6]))
-        y7 = int(y[7].value()+int(weapon[0][7]))
-        y8 = int(y[8].value()+int(weapon[0][8]))
-        y9 = int(y[9].value()+int(weapon[0][9]))
+        y6 = int(y[6].value())
+        y7 = int(y[7].value())
+        y8 = int(y[8].value())
+        y9 = int(y[9].value())
         print("Lv1スロット余り * " + str(y6 - min(y6,y7)))
         print("Lv2スロット余り * " + str(min(y6,y7) - min(y6,y7,y8)))
         print("Lv3スロット余り * " + str(min(y6,y7,y8) - min(y6,y7,y8,y9)))
@@ -173,25 +195,50 @@ if count > 0:
     print("\n追加スキル検索を実行しますか? y/n")
     input = input()
     if input == 'y':
-        # 複数検索条件をすべて削除
-        for i in range(count):
-            del problem.constraints['multiSearch'+str(count-1)]
-        # 全スキルから一つだけLvを+1して問題を解く
-        for i in range(len(skillCondition)):
-            j = 1
-            while (True):
-                del problem.constraints['skill'+str(i)]
-                problem += (int(skillCondition[i][1])+j) <= y[i+16], 'skill'+str(i)
-                if (i != 0) & (j == 1):
+        try:
+            # 複数検索条件をすべて削除
+            for i in range(count):
+                del problem.constraints['multiSearch'+str(count-1)]
+            addSkill = []
+
+            # 全スキルから一つだけLvを+1して問題を解く
+            for i in range(len(skillCondition)):
+                j = 1
+                print("\r追加スキル検索 (" + str(i+1) + "/" + str(len(skillCondition)) + ")",end="")
+
+                # 条件を元に戻す
+                if (i != 0):
                     del problem.constraints['skill'+str(i-1)]
                     problem += (int(skillCondition[i-1][1])) <= y[i-1+16], 'skill'+str(i-1)
+                while (True):
+                    # シリーズスキルじゃない & +jして上限1を超える場合
+                    if (int(skillCondition[i][4]) == 0) & (int(skillCondition[i][1]+j) > int(skillCondition[i][2])):
+                        # 対応する極意が発動していたら実行
+                        if utl.utl.judgeSecret(i,skillCondition):
 
-                # +jして上限を超える場合はスキップ
-                if int(skillCondition[i][1])+j <= int(skillCondition[i][3]):
-                    status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
 
-                    if pulp.LpStatus[status] == "Optimal":
-                        print("追加スキル検索:" + skillCondition[i][0] + "Lv" + str(int(skillCondition[i][1])+j))
-                else:
-                    break
-                j += 1
+
+                            # +jして上限2を超える場合はスキップ
+                            if int(skillCondition[i][1])+j <= int(skillCondition[i][3]):
+                                # 条件の変更
+                                del problem.constraints['skill'+str(i)]
+                                problem += (int(skillCondition[i][1])+j) <= y[i+16], 'skill'+str(i)
+
+
+                                status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
+
+                                if pulp.LpStatus[status] == "Optimal":
+                                    addSkill.append(skillCondition[i][0] + "Lv" + str(int(skillCondition[i][1])+j))
+                                # else:
+                                #     break
+                    else:
+                        break
+                    j += 1
+
+            print("\n追加スキル検索結果")
+            for s in addSkill: print(s)
+        except KeyboardInterrupt:
+            print("\n追加スキル検索を中断しました。")
+            print("追加スキル検索結果")
+            for s in addSkill: print(s)
+            exit()
