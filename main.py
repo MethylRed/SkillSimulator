@@ -211,28 +211,31 @@ if count > 0:
                     del problem.constraints['skill'+str(i-1)]
                     problem += (int(skillCondition[i-1][1])) <= y[i-1+16], 'skill'+str(i-1)
                 while (True):
-                    # シリーズスキルじゃない & +jして上限1を超える場合
-                    if (int(skillCondition[i][4]) == 0) & (int(skillCondition[i][1]+j) > int(skillCondition[i][2])):
-                        # 対応する極意が発動していたら実行
-                        if utl.utl.judgeSecret(i,skillCondition):
-
-
-
-                            # +jして上限2を超える場合はスキップ
-                            if int(skillCondition[i][1])+j <= int(skillCondition[i][3]):
-                                # 条件の変更
-                                del problem.constraints['skill'+str(i)]
-                                problem += (int(skillCondition[i][1])+j) <= y[i+16], 'skill'+str(i)
-
-
-                                status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
-
-                                if pulp.LpStatus[status] == "Optimal":
-                                    addSkill.append(skillCondition[i][0] + "Lv" + str(int(skillCondition[i][1])+j))
-                                # else:
-                                #     break
+                    # シリーズスキルの場合
+                    if (int(skillCondition[i][4]) == 1):
+                        del problem.constraints['skill'+str(i)]
+                        if int(skillCondition[i][1])+j <= int(skillCondition[i][2]):
+                            problem += (int(skillCondition[i][2])) <= y[i+16], 'skill'+str(i)
+                        elif int(skillCondition[i][1])+j <= int(skillCondition[i][3]):
+                            problem += (int(skillCondition[i][3])) <= y[i+16], 'skill'+str(i)
+                        else:
+                            problem += (int(skillCondition[i][1])+j) <= y[i+16], 'skill'+str(i)
+                            break
+                    # シリーズスキルではない場合
                     else:
-                        break
+                        # 上限2を超えている or (上限1を超えている&極意非対応スキル)の場合
+                        if ((int(skillCondition[i][1])+j > int(skillCondition[i][3])) |
+                            ((not utl.utl.judgeSecret(i,skillCondition)) & 
+                             (int(skillCondition[i][1])+j > int(skillCondition[i][2])))):
+                            break
+                        else:
+                            del problem.constraints['skill'+str(i)]
+                            problem += (int(skillCondition[i][1])+j) <= y[i+16], 'skill'+str(i)
+
+                    status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
+
+                    if pulp.LpStatus[status] == "Optimal":
+                        addSkill.append(skillCondition[i][0] + "Lv" + str(int(skillCondition[i][1])+j))
                     j += 1
 
             print("\n追加スキル検索結果")
