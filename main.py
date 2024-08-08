@@ -128,42 +128,59 @@ for i in range(len(skillCondition)):
             exit(str(skillCondition[i][0]) + "・極意が指定されていません。対応するシリーズスキルを指定してください。")
     problem += int(skillCondition[i][1]) <= y[i+16], 'skill'+str(i)
 
+# 検索条件を表示
+# 武器スロ・スキル
+weaponSlot = [0,0,0]
+weaponSkill = ""
+for i in range(7,11):
+    for j in range(int(weapon[0][i])):
+        weaponSlot[j] += 1
+for i in range(len(skillCondition)):
+    if (int(weapon[0][i+1+16]) != 0):
+        weaponSkill += skillCondition[i][0] + "Lv" + weapon[0][i+1+16] + ", "
+print("武器スロット・スキル: " + str(weaponSlot) + ", " + weaponSkill)
+# スキル
+skill = ""
+for i in range(len(skillCondition)):
+    if (int(skillCondition[i][1]) != 0):
+        skill += skillCondition[i][0] + "Lv" + skillCondition[i][1] + ", "
+print("検索スキル: " + skill)
+
+
 
 # 最適化問題を解く
 # 検索回数
 # 非負整数以外は弾く
 while (True):
-    string = input("検索回数を入力してください。(最大50) ")
-    if string.isdecimal(): break
+    numSearch = input("検索回数を入力してください。(最大50) ")
+    if numSearch.isdecimal(): break
     print("非負整数を入力してください。")
-numSearch = int(string)
-if numSearch > 50: numSearch = 50
 count = 0
 while (True):
     status = problem.solve(pulp.PULP_CBC_CMD(msg = False))
 
     # 解があるand検索回数が指定値以下なら解を表示
-    if (pulp.LpStatus[status] == "Optimal") & (count < min(numSearch,50)):
+    if (pulp.LpStatus[status] == "Optimal") & (count < min(int(numSearch),50)):
         # 防具・護石の表示
         for i in range(6):
             for j in range(len(numEquip[i])):
                 if numEquip[i][j].value() != 0:
-                    print(equip[i][j][0] + " * " + str(int(numEquip[i][j].value())))
+                    print(equip[i][j][0])
                     resEquipIndex[i] = j
         # 防御力,属性耐性の表示
         for i in range(10,16):
             print(int(y[i].value()), end=', ')
-        print("\n")
+        print()
 
         # 発動スキルの表示
         for i in range(16,len(y)):
             if y[i].value() != 0:
-                print(str(skillCondition[i-16][0]) + 'Lv' + str(int(y[i].value())))
-
+                print(str(skillCondition[i-16][0]) + 'Lv' + str(int(y[i].value())), end=", ")
+        print()
         # 必要な装飾品の表示
         for i in range(len(numDeco)):
             if numDeco[i].value() != 0:
-                print(deco[i][0] + " * " + str(int(numDeco[i].value())))
+                print(deco[i][0] + "*" + str(int(numDeco[i].value())), end=", ")
                 resDecoIndex.append(i)
 
         # 余りスロットの表示
@@ -171,11 +188,9 @@ while (True):
         y7 = int(y[7].value())
         y8 = int(y[8].value())
         y9 = int(y[9].value())
-        print("Lv1スロット余り * " + str(y6 - min(y6,y7)))
-        print("Lv2スロット余り * " + str(min(y6,y7) - min(y6,y7,y8)))
-        print("Lv3スロット余り * " + str(min(y6,y7,y8) - min(y6,y7,y8,y9)))
-        print("Lv4スロット余り * " + str(min(y6,y7,y8,y9)))
-        print("\n")
+        print("\n余りスロット(Lv1,Lv2,Lv3,Lv4)：", end="")
+        print(str(y6 - min(y6,y7)) + "-" + str(min(y6,y7) - min(y6,y7,y8)) + "-" +
+              str(min(y6,y7,y8) - min(y6,y7,y8,y9)) + "-" + str(min(y6,y7,y8,y9)) + "\n")
 
         # 複数検索のための条件として同じ防具・護石の組み合わせを除外する
         resExcluded = 0
@@ -186,9 +201,7 @@ while (True):
         count += 1
     else:
         break
-
-
-
+print(str(count) + "件の検索結果")
 
 # 追加スキル検索
 if count > 0:
@@ -198,7 +211,7 @@ if count > 0:
         try:
             # 複数検索条件をすべて削除
             for i in range(count):
-                del problem.constraints['multiSearch'+str(count-1)]
+                del problem.constraints['multiSearch'+str(i)]
             addSkill = []
 
             # 全スキルから一つだけLvを+1して問題を解く
